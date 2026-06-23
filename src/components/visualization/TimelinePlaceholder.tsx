@@ -1,58 +1,53 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import type { SimulationResult } from '../../algorithms/types';
 
-export const TimelinePlaceholder: React.FC = () => {
-  const steps = [
-    { track: 53, type: 'head', label: 'Start' },
-    { track: 98, type: 'request', label: 'Req 1' },
-    { track: 183, type: 'request', label: 'Req 2' },
-    { track: 37, type: 'request', label: 'Req 3' },
-    { track: 122, type: 'request', label: 'Req 4' },
-  ];
+interface Props {
+  result: SimulationResult | null;
+}
+
+export const TimelinePlaceholder: React.FC<Props> = ({ result }) => {
+  if (!result) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center text-text-secondary border-2 border-dashed border-border/50 m-4 rounded-sm">
+        <p className="font-mono text-xs uppercase tracking-widest">Awaiting Simulation</p>
+        <p className="text-[10px] mt-2 opacity-50">Configure parameters and click "Run Simulation"</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-text-secondary flex items-center gap-3">
-        Execution Flow
-        <span className="h-px flex-1 bg-border/50"></span>
-      </h3>
-
-      <div className="relative flex items-center px-6 py-4 overflow-x-auto no-scrollbar">
-        {steps.map((step, i) => (
+    <div className="p-8 overflow-x-auto">
+      <div className="flex items-center min-w-max gap-4">
+        {result.sequence.map((track, i) => (
           <React.Fragment key={i}>
-            <div className="flex flex-col items-center gap-2 flex-shrink-0">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.1, duration: 0.3 }}
-                className={`w-12 h-12 rounded-sm border-2 flex items-center justify-center text-xs font-mono font-bold transition-colors
-                  ${step.type === 'head'
-                    ? 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(217,119,6,0.2)]'
-                    : 'border-border bg-surface text-text-secondary hover:border-text-secondary/50'}
-                `}
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className={`w-12 h-12 flex items-center justify-center rounded-sm border-2 font-mono text-sm font-bold transition-colors ${
+                  i === 0
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-text-primary'
+                }`}
               >
-                {step.track}
-              </motion.div>
-              <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter opacity-70">
-                {step.label}
+                {track}
+              </div>
+              <span className="text-[10px] font-mono uppercase text-text-secondary">
+                {i === 0 ? 'Start' : `Req ${i}`}
               </span>
             </div>
-
-            {i < steps.length - 1 && (
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: i * 0.1 + 0.1, duration: 0.4 }}
-                className="w-16 h-px bg-border flex-shrink-0 origin-left mx-2 mb-6"
-              ></motion.div>
+            {i < result.sequence.length - 1 && (
+              <div className="flex flex-col items-center pt-6">
+                <div className="w-12 h-[1px] bg-border relative">
+                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface px-1 text-[8px] font-mono text-text-secondary">
+                     {result.movements[i]}
+                   </div>
+                </div>
+              </div>
             )}
           </React.Fragment>
         ))}
-
-        <div className="flex-shrink-0 ml-8 mb-6 flex items-center gap-3">
-          <div className="w-16 h-px border-t-2 border-dashed border-border/40"></div>
-          <div className="px-4 py-2 border border-dashed border-border rounded-sm text-[10px] font-mono text-text-secondary italic uppercase tracking-wider">
-            Processing...
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-12 h-12 flex items-center justify-center rounded-sm border-2 border-dashed border-border/50 text-text-secondary font-mono text-[8px] uppercase text-center px-1">
+            End
           </div>
         </div>
       </div>

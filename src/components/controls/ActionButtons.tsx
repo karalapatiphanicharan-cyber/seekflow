@@ -1,26 +1,51 @@
 import React from 'react';
-import { Play, RotateCcw, Shuffle, FileInput } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Play, RotateCcw, Dice5, Database } from 'lucide-react';
 
-export const ActionButtons: React.FC = () => {
+interface Props {
+  onRun: () => void;
+  onRandom: () => void;
+  onExample: () => void;
+  onReset: () => void;
+}
+
+export const ActionButtons: React.FC<Props> = ({ onRun, onRandom, onExample, onReset }) => {
   return (
-    <div className="space-y-4 pt-6">
-      <Button variant="primary" fullWidth size="lg" className="gap-3 font-bold text-sm shadow-[0_4px_20px_rgba(217,119,6,0.15)]">
-        <Play size={18} fill="currentColor" /> Run Simulation
+    <div className="space-y-3 pt-2">
+      <Button
+        className="w-full py-2.5 text-sm uppercase tracking-widest font-bold"
+        onClick={onRun}
+      >
+        <Play className="w-4 h-4 mr-2 fill-current" />
+        Run Simulation
       </Button>
 
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" className="gap-2 text-[10px] bg-surface/50">
-          <Shuffle size={14} /> Random
+        <Button
+          variant="secondary"
+          className="py-2 text-[10px] uppercase tracking-wider"
+          onClick={onRandom}
+        >
+          <Dice5 className="w-3 h-3 mr-1.5" />
+          Random
         </Button>
-        <Button variant="outline" className="gap-2 text-[10px] bg-surface/50">
-          <FileInput size={14} /> Example
+        <Button
+          variant="secondary"
+          className="py-2 text-[10px] uppercase tracking-wider"
+          onClick={onExample}
+        >
+          <Database className="w-3 h-3 mr-1.5" />
+          Example
         </Button>
       </div>
 
-      <Button variant="outline" fullWidth className="gap-2 text-[11px] text-error/80 border-error/10 hover:bg-error/5 hover:border-error/30 transition-all uppercase tracking-[0.2em] mt-2">
-        <RotateCcw size={14} /> Reset
-      </Button>
+      <button
+        onClick={onReset}
+        className="w-full flex items-center justify-center gap-2 py-2 text-[10px] text-text-secondary hover:text-primary transition-colors uppercase tracking-widest font-mono group"
+      >
+        <RotateCcw className="w-3 h-3 group-hover:rotate-[-45deg] transition-transform" />
+        Reset
+      </button>
     </div>
   );
 };

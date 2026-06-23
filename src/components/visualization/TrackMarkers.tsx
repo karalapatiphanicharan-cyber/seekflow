@@ -1,28 +1,20 @@
 import React from 'react';
 
-interface TrackMarkersProps {
+interface Props {
+  requests: number[];
   diskSize: number;
 }
 
-export const TrackMarkers: React.FC<TrackMarkersProps> = ({ diskSize }) => {
-  const step = diskSize > 500 ? 100 : 50;
-  const markers = [];
-  for (let i = 0; i <= diskSize; i += step) {
-    markers.push(i);
-  }
-
-  if (markers[markers.length - 1] !== diskSize) {
-    markers.push(diskSize);
-  }
-
+export const TrackMarkers: React.FC<Props> = ({ requests, diskSize }) => {
   return (
-    <div className="absolute inset-x-0 -bottom-10 flex justify-between px-[2%]">
-      {markers.map((m) => (
-        <div key={m} className="flex flex-col items-center">
-          <div className="w-px h-3 bg-border"></div>
-          <span className="text-xs font-mono text-text-secondary mt-1.5 font-medium">{m}</span>
-        </div>
+    <>
+      {requests.map((track, i) => (
+        <div
+          key={`${track}-${i}`}
+          className="absolute w-2.5 h-2.5 -ml-1.25 -mt-1.25 rounded-full bg-text-primary/40 border border-white/20 shadow-[0_0_5px_rgba(255,255,255,0.2)]"
+          style={{ left: `${(track / (diskSize - 1)) * 100}%` }}
+        />
       ))}
-    </div>
+    </>
   );
 };

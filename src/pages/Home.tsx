@@ -11,19 +11,49 @@ import { ActionButtons } from '../components/controls/ActionButtons';
 import { DiskCanvas } from '../components/visualization/DiskCanvas';
 import { MetricsGrid } from '../components/metrics/MetricsGrid';
 import { TimelinePlaceholder } from '../components/visualization/TimelinePlaceholder';
+import { useSimulation } from '../hooks/useSimulation';
 
 const Home: React.FC = () => {
+  const sim = useSimulation();
+
   return (
     <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
       <Sidebar>
         <div className="space-y-5">
           <SectionTitle subtitle="Simulation Parameters">Config</SectionTitle>
-          <AlgorithmSelector />
-          <HeadPositionInput />
-          <DiskSizeInput />
-          <DirectionSelector />
-          <RequestInput />
-          <ActionButtons />
+          <AlgorithmSelector
+            value={sim.algorithm}
+            onChange={sim.setAlgorithm}
+          />
+          <HeadPositionInput
+            value={sim.head}
+            onChange={sim.setHead}
+          />
+          <DiskSizeInput
+            value={sim.diskSize}
+            onChange={sim.setDiskSize}
+          />
+          <DirectionSelector
+            value={sim.direction}
+            onChange={sim.setDirection}
+          />
+          <RequestInput
+            value={sim.requestString}
+            onChange={sim.setRequestString}
+          />
+
+          {sim.error && (
+            <div className="text-error text-xs font-mono bg-error/10 border border-error/20 p-2 rounded-sm">
+              {sim.error}
+            </div>
+          )}
+
+          <ActionButtons
+            onRun={sim.runSimulation}
+            onRandom={sim.generateRandom}
+            onExample={sim.loadExample}
+            onReset={sim.reset}
+          />
         </div>
       </Sidebar>
 
@@ -31,19 +61,24 @@ const Home: React.FC = () => {
         <section>
           <SectionTitle subtitle="Real-time track visualization">Visualization</SectionTitle>
           <Card className="min-h-[400px] flex flex-col justify-center px-10">
-            <DiskCanvas />
+            <DiskCanvas
+              head={sim.head}
+              requests={sim.parsedRequests}
+              diskSize={sim.diskSize}
+              result={sim.result}
+            />
           </Card>
         </section>
 
         <section>
           <SectionTitle subtitle="System performance indicators">Metrics</SectionTitle>
-          <MetricsGrid />
+          <MetricsGrid result={sim.result} />
         </section>
 
         <section>
           <SectionTitle subtitle="Step-by-step execution log">Execution</SectionTitle>
           <Card>
-            <TimelinePlaceholder />
+            <TimelinePlaceholder result={sim.result} />
           </Card>
         </section>
       </main>
