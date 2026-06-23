@@ -18,28 +18,45 @@ export const cscan = (input: SimulationInput): SimulationResult => {
   }
 
   const sortedRequests = [...requests].sort((a, b) => a - b);
-  const left = sortedRequests.filter(r => r < head);
-  const right = sortedRequests.filter(r => r >= head);
 
   let fullPath: number[] = [];
 
   if (direction === 'right') {
+    const right = sortedRequests.filter(r => r >= head);
+    const left = sortedRequests.filter(r => r < head);
     // 53 -> (right requests) -> diskSize-1 -> 0 -> (left requests)
-    fullPath = [...right, diskSize - 1, 0, ...left];
+    fullPath = [...right];
+    if (fullPath[fullPath.length - 1] !== diskSize - 1) {
+      fullPath.push(diskSize - 1);
+    }
+    fullPath.push(0);
+    fullPath = [...fullPath, ...left];
   } else {
+    const left = sortedRequests.filter(r => r <= head).reverse();
+    const right = sortedRequests.filter(r => r > head).reverse();
     // 53 -> (left requests) -> 0 -> diskSize-1 -> (right requests)
-    // C-SCAN usually moves in one direction, if it goes left, it stays left?
-    // "Move in one direction only. Upon reaching the boundary: jump to opposite boundary."
-    fullPath = [...left.reverse(), 0, diskSize - 1, ...right.reverse()];
+    fullPath = [...left];
+    if (fullPath[fullPath.length - 1] !== 0) {
+      fullPath.push(0);
+    }
+    fullPath.push(diskSize - 1);
+    fullPath = [...fullPath, ...right];
   }
 
   let currentHead = head;
   for (const track of fullPath) {
+    // For C-SCAN, the jump from boundary to boundary IS often counted as seek distance
+    // depending on the textbook, but the prompt says "Include the jump distance in total seek calculation."
     const movement = Math.abs(track - currentHead);
-    sequence.push(track);
-    movements.push(movement);
-    totalSeek += movement;
-    currentHead = track;
+    if (movement === 0 && sequence.length > 1) continue; // Skip redundant points if they are already there
+
+    // Only add to sequence if it's not the same as currentHead (unless it's the first move)
+    if (track !== currentHead) {
+      sequence.push(track);
+      movements.push(movement);
+      totalSeek += movement;
+      currentHead = track;
+    }
   }
 
   return {

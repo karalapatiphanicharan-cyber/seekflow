@@ -18,26 +18,38 @@ export const scan = (input: SimulationInput): SimulationResult => {
   }
 
   const sortedRequests = [...requests].sort((a, b) => a - b);
-  const left = sortedRequests.filter(r => r < head).reverse();
-  const right = sortedRequests.filter(r => r >= head);
 
   let fullPath: number[] = [];
 
   if (direction === 'left') {
+    const left = sortedRequests.filter(r => r < head).reverse();
+    const right = sortedRequests.filter(r => r >= head);
     // 53 -> (left requests) -> 0 -> (right requests)
-    fullPath = [...left, 0, ...right];
+    fullPath = [...left];
+    if (fullPath.length === 0 || fullPath[fullPath.length - 1] !== 0) {
+        fullPath.push(0);
+    }
+    fullPath = [...fullPath, ...right];
   } else {
+    const right = sortedRequests.filter(r => r > head);
+    const left = sortedRequests.filter(r => r <= head).reverse();
     // 53 -> (right requests) -> diskSize-1 -> (left requests)
-    fullPath = [...right, diskSize - 1, ...left];
+    fullPath = [...right];
+    if (fullPath.length === 0 || fullPath[fullPath.length - 1] !== diskSize - 1) {
+        fullPath.push(diskSize - 1);
+    }
+    fullPath = [...fullPath, ...left];
   }
 
   let currentHead = head;
   for (const track of fullPath) {
     const movement = Math.abs(track - currentHead);
-    sequence.push(track);
-    movements.push(movement);
-    totalSeek += movement;
-    currentHead = track;
+    if (track !== currentHead) {
+      sequence.push(track);
+      movements.push(movement);
+      totalSeek += movement;
+      currentHead = track;
+    }
   }
 
   return {

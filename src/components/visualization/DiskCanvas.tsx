@@ -27,7 +27,7 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result }
 
       {/* Track Line */}
       <div className="absolute inset-x-10 top-1/2 -translate-y-1/2 h-1 bg-border rounded-full shadow-[0_0_10px_rgba(47,59,76,0.5)]">
-        {/* Dynamic Track Path (Phase 2: static lines between sequence) */}
+        {/* Dynamic Track Path */}
         {result && (
            <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
              {result.sequence.map((pos, i) => {
@@ -39,8 +39,9 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result }
                    key={i}
                    x1={x1} y1="50%"
                    x2={x2} y2="50%"
-                   stroke="rgba(217, 119, 6, 0.3)"
+                   stroke="#D97706"
                    strokeWidth="2"
+                   strokeOpacity={0.4}
                  />
                );
              })}
@@ -65,8 +66,15 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result }
 
       {/* Markers Container */}
       <div className="absolute inset-x-10 top-1/2 -translate-y-1/2 h-0">
-        <TrackMarkers requests={requests} diskSize={diskSize} />
-        <HeadIndicator position={result ? result.sequence[result.sequence.length - 1] : head} diskSize={diskSize} />
+        <TrackMarkers
+            requests={requests}
+            diskSize={diskSize}
+            sequence={result?.sequence}
+        />
+        <HeadIndicator
+            position={result ? result.sequence[result.sequence.length - 1] : head}
+            diskSize={diskSize}
+        />
       </div>
     </div>
   );

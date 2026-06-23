@@ -20,6 +20,7 @@ export const useSimulation = () => {
   const [error, setError] = useState<string | null>(null);
 
   const parsedRequests = useMemo(() => {
+    if (!requestString.trim()) return [];
     return requestString
       .split(',')
       .map(s => s.trim())
@@ -35,16 +36,25 @@ export const useSimulation = () => {
     if (isNaN(diskSize) || diskSize <= 0) {
       return 'Disk size must be a positive number.';
     }
-    if (parsedRequests.length === 0 && requestString.trim() !== '') {
-      return 'Invalid request sequence. Please use comma-separated numbers.';
+
+    // Improved parsing validation
+    const parts = requestString.split(',').map(s => s.trim()).filter(s => s !== '');
+    if (parts.length === 0 && requestString.trim() !== '') {
+        return 'Invalid request sequence. Please use comma-separated numbers.';
     }
-    for (const r of parsedRequests) {
-      if (r < 0 || r >= diskSize) {
-        return `Request ${r} is outside disk boundaries (0-${diskSize - 1}).`;
-      }
+
+    for (const part of parts) {
+        const n = Number(part);
+        if (isNaN(n)) {
+            return `Invalid value detected: "${part}". Please enter numbers only.`;
+        }
+        if (n < 0 || n >= diskSize) {
+            return `Request ${n} is outside disk boundaries (0-${diskSize - 1}).`;
+        }
     }
+
     return null;
-  }, [head, diskSize, parsedRequests, requestString]);
+  }, [head, diskSize, requestString]);
 
   const runSimulation = useCallback(() => {
     const validationError = validate();
@@ -91,11 +101,13 @@ export const useSimulation = () => {
 
   const generateRandom = useCallback(() => {
     const count = Math.floor(Math.random() * 5) + 8; // 8-12
-    const randomRequests = Array.from({ length: count }, () =>
-      Math.floor(Math.random() * diskSize)
-    );
-    setRequestString(randomRequests.join(', '));
+    const randomSet = new Set<number>();
+    while (randomSet.size < count) {
+        randomSet.add(Math.floor(Math.random() * diskSize));
+    }
+    setRequestString(Array.from(randomSet).join(', '));
     setError(null);
+    setResult(null); // Clear previous results when inputs change
   }, [diskSize]);
 
   const loadExample = useCallback(() => {
@@ -105,6 +117,7 @@ export const useSimulation = () => {
     setDirection('left');
     setRequestString('98, 183, 37, 122, 14, 124, 65, 67');
     setError(null);
+    setResult(null);
   }, []);
 
   const reset = useCallback(() => {

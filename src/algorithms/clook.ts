@@ -18,26 +18,30 @@ export const clook = (input: SimulationInput): SimulationResult => {
   }
 
   const sortedRequests = [...requests].sort((a, b) => a - b);
-  const left = sortedRequests.filter(r => r < head);
-  const right = sortedRequests.filter(r => r >= head);
 
   let fullPath: number[] = [];
 
   if (direction === 'right') {
+    const right = sortedRequests.filter(r => r >= head);
+    const left = sortedRequests.filter(r => r < head);
     // 53 -> (right requests) -> (left requests)
     fullPath = [...right, ...left];
   } else {
+    const left = sortedRequests.filter(r => r <= head).reverse();
+    const right = sortedRequests.filter(r => r > head).reverse();
     // 53 -> (left requests) -> (right requests)
-    fullPath = [...left.reverse(), ...right.reverse()];
+    fullPath = [...left, ...right];
   }
 
   let currentHead = head;
   for (const track of fullPath) {
     const movement = Math.abs(track - currentHead);
-    sequence.push(track);
-    movements.push(movement);
-    totalSeek += movement;
-    currentHead = track;
+    if (track !== currentHead) {
+      sequence.push(track);
+      movements.push(movement);
+      totalSeek += movement;
+      currentHead = track;
+    }
   }
 
   return {

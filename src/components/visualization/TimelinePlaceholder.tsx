@@ -19,7 +19,7 @@ export const TimelinePlaceholder: React.FC<Props> = ({ result }) => {
     <div className="p-8 overflow-x-auto">
       <div className="flex items-center min-w-max gap-4">
         {result.sequence.map((track, i) => (
-          <React.Fragment key={i}>
+          <React.Fragment key={`${track}-${i}`}>
             <div className="flex flex-col items-center gap-2">
               <div
                 className={`w-12 h-12 flex items-center justify-center rounded-sm border-2 font-mono text-sm font-bold transition-colors ${
@@ -31,7 +31,7 @@ export const TimelinePlaceholder: React.FC<Props> = ({ result }) => {
                 {track}
               </div>
               <span className="text-[10px] font-mono uppercase text-text-secondary">
-                {i === 0 ? 'Start' : `Req ${i}`}
+                {i === 0 ? 'Start' : `Pos ${i}`}
               </span>
             </div>
             {i < result.sequence.length - 1 && (
