@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { SectionTitle } from '../components/ui/SectionTitle';
 import { Card } from '../components/ui/Card';
@@ -12,13 +12,16 @@ import { DiskCanvas } from '../components/visualization/DiskCanvas';
 import { MetricsGrid } from '../components/metrics/MetricsGrid';
 import { TimelinePlaceholder } from '../components/visualization/TimelinePlaceholder';
 import { useSimulation } from '../hooks/useSimulation';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Home: React.FC = () => {
   const sim = useSimulation();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-      <Sidebar>
+    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
+      {/* Configuration Sidebar */}
+      <Sidebar isCollapsed={isSidebarCollapsed}>
         <div className="space-y-5">
           <SectionTitle subtitle="Simulation Parameters">Config</SectionTitle>
           <AlgorithmSelector
@@ -57,6 +60,21 @@ const Home: React.FC = () => {
         </div>
       </Sidebar>
 
+      {/* Persistent Toggle Button */}
+      <button
+        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        className="absolute top-1/2 z-40 w-6 h-12 bg-surface border border-border border-l-0 rounded-r-md flex items-center justify-center text-text-secondary hover:text-text-primary transition-all duration-300 shadow-md group"
+        style={{
+          left: isSidebarCollapsed ? '0' : '340px',
+          transform: 'translateY(-50%)'
+        }}
+        aria-label={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      >
+        <div className="transition-transform duration-300 group-hover:scale-110">
+          {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </div>
+      </button>
+
       <main className="flex-1 overflow-y-auto p-5 space-y-6">
         <section>
           <SectionTitle subtitle="Real-time track visualization">Visualization</SectionTitle>
@@ -66,6 +84,7 @@ const Home: React.FC = () => {
               requests={sim.parsedRequests}
               diskSize={sim.diskSize}
               result={sim.result}
+              direction={sim.direction}
             />
           </Card>
         </section>
