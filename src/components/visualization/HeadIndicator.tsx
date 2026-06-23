@@ -1,21 +1,56 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface Props {
-  position: number;
+  track: number;
   diskSize: number;
-  isMinimal?: boolean;
+  stepIndex: number;
+  totalSteps: number;
 }
 
-export const HeadIndicator: React.FC<Props> = ({ position, diskSize, isMinimal = false }) => {
+export const HeadIndicator: React.FC<Props> = ({ track, diskSize, stepIndex, totalSteps }) => {
+  const left = `${(track / (diskSize - 1)) * 100}%`;
+  const stepHeight = 100 / (totalSteps - 1);
+  const top = `${stepIndex * stepHeight}%`;
+
   return (
-    <div
-      className="absolute flex flex-col items-center"
-      style={{ left: !isMinimal ? `${(position / (diskSize - 1)) * 100}%` : '0' }}
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="absolute z-30"
+      style={{ left, top }}
     >
-      <div className={`${isMinimal ? 'w-3 h-3 -mt-1.5' : 'w-5 h-5 -mt-2.5'} rounded-full bg-primary border-2 border-primary-hover shadow-[0_0_15px_rgba(217,119,6,0.6)]`} />
-      <div className={`${isMinimal ? 'mt-1' : 'mt-2'} px-1.5 py-0.5 bg-primary/20 border border-primary/40 rounded-sm`}>
-        <span className={`${isMinimal ? 'text-[8px]' : 'text-[10px]'} font-mono text-primary font-bold`}>{position}</span>
+      <div className="relative flex flex-col items-center">
+        {/* Pulse effect */}
+        <motion.div
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.4, 0, 0.4]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full bg-primary/30"
+        />
+
+        {/* Main Head Marker */}
+        <div className="w-6 h-6 -ml-3 -mt-3 rounded-full bg-primary border-2 border-primary-hover shadow-[0_0_20px_rgba(217,119,6,0.6)] flex items-center justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_5px_white]" />
+        </div>
+
+        {/* Label */}
+        <div className="absolute top-5 whitespace-nowrap px-2 py-1 bg-primary border border-primary-hover rounded-sm shadow-lg">
+            <span className="text-[11px] font-mono text-white font-bold tracking-tight">{track}</span>
+        </div>
+
+        {/* Vertical Guideline to Axis (Upwards) */}
+        <div
+          className="absolute bottom-3 w-px border-l border-primary/30 border-dashed -z-10"
+          style={{ height: '500px', transform: 'translateY(-100%)' }}
+        />
       </div>
-    </div>
+    </motion.div>
   );
 };
