@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SimulationResult } from '../../algorithms/types';
+import type { SimulationResult, Direction } from '../../algorithms/types';
 import { HeadIndicator } from './HeadIndicator';
 import { TrackMarkers } from './TrackMarkers';
 
@@ -8,15 +8,22 @@ interface Props {
   requests: number[];
   diskSize: number;
   result: SimulationResult | null;
+  direction: Direction;
 }
 
-export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result }) => {
+export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result, direction }) => {
   const sequence = result?.sequence || [];
   const algorithm = result?.algorithm || '';
 
+  // Refined Jump Detection: Check if movement contradicts algorithm flow
   const isJump = (from: number, to: number) => {
     if (!algorithm.startsWith('C-')) return false;
-    return Math.abs(to - from) > diskSize * 0.5;
+
+    // In C-SCAN/C-LOOK, any movement opposite to the specified direction is a logical jump
+    if (direction === 'right' && to < from) return true;
+    if (direction === 'left' && to > from) return true;
+
+    return false;
   };
 
   return (
@@ -59,24 +66,40 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result }
                if (i === 0) return null;
 
                const stepHeight = 100 / (sequence.length - 1);
-               const y1 = `${(i - 1) * stepHeight}%`;
-               const y2 = `${i * stepHeight}%`;
+               const y1Val = (i - 1) * stepHeight;
+               const y2Val = i * stepHeight;
+               const y1 = `${y1Val}%`;
+               const y2 = `${y2Val}%`;
 
-               const x1 = `${(sequence[i-1] / (diskSize - 1)) * 100}%`;
-               const x2 = `${(pos / (diskSize - 1)) * 100}%`;
+               const x1Val = (sequence[i-1] / (diskSize - 1)) * 100;
+               const x2Val = (pos / (diskSize - 1)) * 100;
+               const x1 = `${x1Val}%`;
+               const x2 = `${x2Val}%`;
 
                const jump = isJump(sequence[i-1], pos);
 
                return (
-                 <line
-                    key={i}
-                    x1={x1} y1={y1}
-                    x2={x2} y2={y2}
-                    stroke={jump ? "rgba(156, 163, 175, 0.4)" : "url(#path-gradient)"}
-                    strokeWidth={jump ? "1.5" : "2.5"}
-                    strokeDasharray={jump ? "4,4" : "0"}
-                    strokeLinecap="round"
-                 />
+                 <g key={i}>
+                   <line
+                      x1={x1} y1={y1}
+                      x2={x2} y2={y2}
+                      stroke={jump ? "rgba(156, 163, 175, 0.4)" : "url(#path-gradient)"}
+                      strokeWidth={jump ? "1.5" : "2.5"}
+                      strokeDasharray={jump ? "4,4" : "0"}
+                      strokeLinecap="round"
+                   />
+                   {jump && (
+                     <text
+                        x={`${(x1Val + x2Val) / 2}%`}
+                        y={`${(y1Val + y2Val) / 2}%`}
+                        dy="-5"
+                        textAnchor="middle"
+                        className="fill-text-secondary text-[8px] font-mono uppercase tracking-tighter opacity-70"
+                     >
+                       Logical Jump
+                     </text>
+                   )}
+                 </g>
                );
              })}
            </svg>
@@ -121,18 +144,18 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result }
         )}
 
         {/* Legend */}
-        <div className="absolute -bottom-8 left-0 flex gap-6 opacity-60">
+        <div className="absolute -bottom-8 left-0 flex gap-6 opacity-80">
             <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-secondary" />
-                <span className="text-[9px] font-mono uppercase tracking-wider">Start</span>
+                <span className="text-[9px] font-mono uppercase tracking-wider text-text-secondary">Start</span>
             </div>
             <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                <span className="text-[9px] font-mono uppercase tracking-wider">Current Head</span>
+                <span className="text-[9px] font-mono uppercase tracking-wider text-text-secondary">Current Head</span>
             </div>
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-px bg-border dashed border-t border-dashed" />
-                <span className="text-[9px] font-mono uppercase tracking-wider">Logical Jump</span>
+                <div className="w-4 h-px border-t border-dashed border-text-secondary/50" />
+                <span className="text-[9px] font-mono uppercase tracking-wider text-text-secondary">Logical Jump</span>
             </div>
         </div>
       </div>
