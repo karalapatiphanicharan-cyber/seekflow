@@ -1,5 +1,6 @@
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface MetricCardProps {
   label: string;
@@ -14,20 +15,25 @@ interface MetricCardProps {
 
 export const MetricCard: React.FC<MetricCardProps> = ({ label, value, unit, icon: Icon, trend }) => {
   return (
-    <div className="bg-surface border border-border p-4 rounded-sm flex flex-col justify-between">
-      <div className="flex justify-between items-start">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-text-secondary">{label}</span>
-        <Icon size={16} className="text-primary opacity-50" />
+    <motion.div
+      whileHover={{ y: -2, borderColor: 'var(--color-primary)', transition: { duration: 0.2 } }}
+      className="bg-surface border border-border p-5 rounded-sm flex flex-col justify-between group transition-colors"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-[11px] font-mono uppercase tracking-[0.15em] text-text-secondary group-hover:text-text-primary transition-colors">{label}</span>
+        <div className="p-2 bg-background/50 rounded-sm border border-border/50">
+          <Icon size={18} className="text-primary opacity-70 group-hover:opacity-100 transition-opacity" />
+        </div>
       </div>
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-2xl font-bold font-mono tracking-tighter text-text-primary">{value}</span>
-        {unit && <span className="text-xs font-mono text-text-secondary">{unit}</span>}
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-bold font-mono tracking-tighter text-text-primary leading-none">{value}</span>
+        {unit && <span className="text-sm font-mono text-text-secondary uppercase tracking-wider">{unit}</span>}
       </div>
       {trend && (
-        <div className={`mt-2 text-[10px] font-mono ${trend.isGood ? 'text-success' : 'text-error'}`}>
+        <div className={`mt-4 text-[11px] font-mono ${trend.isGood ? 'text-success' : 'text-error'}`}>
           {trend.value > 0 ? '+' : ''}{trend.value}% vs average
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

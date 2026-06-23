@@ -16,7 +16,7 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
       <Sidebar>
-        <div className="space-y-6">
+        <div className="space-y-5">
           <SectionTitle subtitle="Simulation Parameters">Config</SectionTitle>
           <AlgorithmSelector />
           <HeadPositionInput />
@@ -27,10 +27,10 @@ const Home: React.FC = () => {
         </div>
       </Sidebar>
 
-      <main className="flex-1 overflow-y-auto p-6 space-y-8">
+      <main className="flex-1 overflow-y-auto p-5 space-y-6">
         <section>
           <SectionTitle subtitle="Real-time track visualization">Visualization</SectionTitle>
-          <Card className="min-h-[300px] flex flex-col justify-center px-8">
+          <Card className="min-h-[400px] flex flex-col justify-center px-10">
             <DiskCanvas />
           </Card>
         </section>
