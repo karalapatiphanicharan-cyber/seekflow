@@ -12,7 +12,7 @@ export const RequestInput: React.FC<Props> = ({ value, onChange }) => {
         Request Sequence
       </label>
       <textarea
-        className="w-full h-24 bg-surface border border-border rounded-sm px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary transition-colors resize-none"
+        className="w-full h-24 bg-surface border border-border rounded-sm px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary transition-colors resize-none placeholder:text-text-secondary/60"
         placeholder="98, 183, 37, 122, 14, 124, 65, 67"
         value={value}
         onChange={(e) => onChange(e.target.value)}
