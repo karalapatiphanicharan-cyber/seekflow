@@ -8,31 +8,13 @@ import { RequestInput } from '../components/controls/RequestInput';
 import { DirectionSelector } from '../components/controls/DirectionSelector';
 import { fcfs, sstf, scan, cscan, look, clook } from '../algorithms';
 import type { SimulationInput, SimulationResult, Direction } from '../algorithms/types';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  LabelList
-} from 'recharts';
-import { Trophy, ChevronDown, ChevronUp, Activity, BarChart3, ListChecks, RotateCcw, Dice5, Lightbulb, Loader2 } from 'lucide-react';
+import { Trophy, ChevronDown, ChevronUp, Activity, ListChecks, RotateCcw, Dice5, Lightbulb, Loader2, FileDown } from 'lucide-react';
+import { exportToPDF } from '../utils/pdfExport';
 
 const DEFAULT_HEAD = 53;
 const DEFAULT_DISK_SIZE = 200;
 const DEFAULT_DIRECTION: Direction = 'right';
 const EXAMPLE_REQUESTS = '98, 183, 37, 122, 14, 124, 65, 67';
-
-interface ChartDataItem {
-  name: string;
-  seek: number;
-  avg: number;
-  rank: number;
-  isWinner: boolean;
-}
 
 const Compare: React.FC = () => {
   // Input State
@@ -142,16 +124,18 @@ const Compare: React.FC = () => {
     return results.filter(r => r.totalSeek === minSeek);
   }, [results]);
 
-  const sortedChartData = useMemo(() => {
-    if (!results) return [];
-    return [...results].sort((a, b) => a.totalSeek - b.totalSeek).map((r, index) => ({
-      name: r.algorithm,
-      seek: r.totalSeek,
-      avg: r.averageSeek,
-      rank: index + 1,
-      isWinner: winners.some(w => w.algorithm === r.algorithm)
-    }));
-  }, [results, winners]);
+  const isWinner = (algo: string) => winners.some(w => w.algorithm === algo);
+
+  const handleExportPDF = useCallback(() => {
+    if (!results) return;
+    exportToPDF({
+        head,
+        diskSize,
+        direction,
+        requestString,
+        results
+    });
+  }, [results, head, diskSize, direction, requestString]);
 
   return (
     <main className="flex-1 overflow-y-auto p-5 space-y-8 bg-background">
@@ -170,7 +154,19 @@ const Compare: React.FC = () => {
                 <Button variant="secondary" size="sm" onClick={handleClear} disabled={isLoading}>
                     <RotateCcw size={14} className="mr-1.5" /> Clear
                 </Button>
+
                 <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleExportPDF}
+                    disabled={isLoading || !results}
+                    className={!results ? "opacity-50 cursor-not-allowed" : ""}
+                >
+                    <FileDown size={14} className="mr-1.5" /> Export PDF
+                </Button>
+
                 <Button variant="primary" size="lg" onClick={handleCompare} disabled={isLoading} className="md:w-48 shadow-lg shadow-primary/20">
                     {isLoading ? (
                         <>
@@ -204,8 +200,8 @@ const Compare: React.FC = () => {
 
         {!results && !isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center text-text-secondary border-2 border-dashed border-border/50 rounded-sm bg-surface/5">
-                 <BarChart3 size={48} className="opacity-20 mb-4" />
-                 <p className="font-mono text-sm uppercase tracking-widest opacity-50">Run Compare All to visualize Total Seek Distance.</p>
+                 <ListChecks size={48} className="opacity-20 mb-4" />
+                 <p className="font-mono text-sm uppercase tracking-widest opacity-50 text-center px-4">Run Compare All to analyze results.</p>
             </div>
         ) : isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center">
@@ -245,163 +241,79 @@ const Compare: React.FC = () => {
                 </div>
             </section>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Chart Section */}
-                <Card className="lg:col-span-1 p-6 flex flex-col min-h-[400px]">
-                    <div className="flex items-center gap-2 mb-6">
-                        <BarChart3 size={16} className="text-primary" />
-                        <h3 className="text-xs font-mono font-bold uppercase tracking-widest">Total Seek Comparison</h3>
-                    </div>
-                    <div className="flex-1">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={sortedChartData}
-                                layout="vertical"
-                                margin={{ left: -10, right: 40 }}
-                                barSize={32}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" stroke="#2F3B4C" horizontal={true} vertical={false} />
-                                <XAxis type="number" hide />
-                                <YAxis
-                                    dataKey="name"
-                                    type="category"
-                                    stroke="#9CA3AF"
-                                    fontSize={10}
-                                    fontFamily="JetBrains Mono"
-                                    width={70}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip
-                                    cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                                    content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            const data = payload[0].payload as ChartDataItem;
-                                            return (
-                                                <div className="bg-surface border border-border p-3 font-mono text-[10px] shadow-xl">
-                                                    <p className="text-text-primary font-bold mb-2 uppercase border-b border-border pb-1">
-                                                        {data.name} {data.isWinner && '🏆'}
-                                                    </p>
-                                                    <div className="space-y-1">
-                                                        <div className="flex justify-between gap-4">
-                                                            <span className="text-text-secondary">TOTAL SEEK:</span>
-                                                            <span className="text-primary font-bold">{data.seek}</span>
-                                                        </div>
-                                                        <div className="flex justify-between gap-4">
-                                                            <span className="text-text-secondary">AVG SEEK:</span>
-                                                            <span className="text-text-primary">{data.avg.toFixed(2)}</span>
-                                                        </div>
-                                                        <div className="flex justify-between gap-4">
-                                                            <span className="text-text-secondary">RANK:</span>
-                                                            <span className="text-text-primary">#{data.rank}</span>
-                                                        </div>
-                                                    </div>
+            {/* Table Section - Full Width */}
+            <Card className="w-full p-0 overflow-hidden border-border/50">
+                <div className="p-4 border-b border-border flex items-center gap-2 bg-surface/30">
+                    <ListChecks size={16} className="text-primary" />
+                    <h3 className="text-xs font-mono font-bold uppercase tracking-widest">Detailed Analysis</h3>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left font-mono text-xs">
+                        <thead>
+                            <tr className="bg-surface/50 border-b border-border text-text-secondary uppercase tracking-widest">
+                                <th className="px-6 py-3 font-medium">Algorithm</th>
+                                <th className="px-6 py-3 font-medium">Total Seek</th>
+                                <th className="px-6 py-3 font-medium">Avg Seek</th>
+                                <th className="px-6 py-3 font-medium text-right">Sequence</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                            {results.map((res) => {
+                                const winning = isWinner(res.algorithm);
+                                const isExpanded = expandedRow === res.algorithm;
+
+                                return (
+                                    <React.Fragment key={res.algorithm}>
+                                        <tr className={`transition-colors hover:bg-surface/30 ${winning ? 'bg-primary/5' : ''}`}>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`font-bold ${winning ? 'text-primary' : 'text-text-primary'}`}>
+                                                        {res.algorithm}
+                                                    </span>
+                                                    {winning && <Trophy size={12} className="text-primary" />}
                                                 </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                />
-                                <Bar dataKey="seek" radius={[0, 4, 4, 0]} animationDuration={1000}>
-                                    {sortedChartData.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={entry.isWinner ? '#D97706' : '#2F3B4C'}
-                                            fillOpacity={entry.isWinner ? 1 : 0.6}
-                                        />
-                                    ))}
-                                    <LabelList
-                                        dataKey="seek"
-                                        position="right"
-                                        fill="#F3F4F6"
-                                        fontSize={10}
-                                        fontFamily="JetBrains Mono"
-                                        offset={10}
-                                        formatter={(value: number, _index: number, entry: { payload: ChartDataItem }) => {
-                                            const data = entry.payload;
-                                            return `${value} ${data.isWinner ? '🏆' : ''}`;
-                                        }}
-                                    />
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Card>
-
-                {/* Table Section */}
-                <Card className="lg:col-span-2 p-0 overflow-hidden border-border/50">
-                    <div className="p-4 border-b border-border flex items-center gap-2 bg-surface/30">
-                        <ListChecks size={16} className="text-primary" />
-                        <h3 className="text-xs font-mono font-bold uppercase tracking-widest">Detailed Analysis</h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left font-mono text-xs">
-                            <thead>
-                                <tr className="bg-surface/50 border-b border-border text-text-secondary uppercase tracking-widest">
-                                    <th className="px-6 py-3 font-medium">Algorithm</th>
-                                    <th className="px-6 py-3 font-medium">Total Seek</th>
-                                    <th className="px-6 py-3 font-medium">Avg Seek</th>
-                                    <th className="px-6 py-3 font-medium text-right">Sequence</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border/50">
-                                {results.map((res) => {
-                                    const winning = winners.some(w => w.algorithm === res.algorithm);
-                                    const isExpanded = expandedRow === res.algorithm;
-
-                                    return (
-                                        <React.Fragment key={res.algorithm}>
-                                            <tr className={`transition-colors hover:bg-surface/30 ${winning ? 'bg-primary/5' : ''}`}>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`font-bold ${winning ? 'text-primary' : 'text-text-primary'}`}>
-                                                            {res.algorithm}
-                                                        </span>
-                                                        {winning && <Trophy size={12} className="text-primary" />}
+                                            </td>
+                                            <td className={`px-6 py-4 font-bold ${winning ? 'text-primary' : 'text-text-primary'}`}>{res.totalSeek}</td>
+                                            <td className="px-6 py-4 text-text-secondary">{res.averageSeek.toFixed(2)}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => setExpandedRow(isExpanded ? null : res.algorithm)}
+                                                    className="text-primary hover:text-primary-hover flex items-center gap-1 ml-auto transition-colors"
+                                                >
+                                                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                    <span>View Order</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr className="bg-background/50">
+                                                <td colSpan={4} className="px-6 py-4">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        {res.sequence.map((track, idx) => (
+                                                            <React.Fragment key={idx}>
+                                                                <span className={`px-1.5 py-0.5 rounded-sm border text-[10px] ${
+                                                                    idx === 0
+                                                                    ? 'bg-secondary/10 border-secondary/30 text-secondary'
+                                                                    : 'bg-surface/50 border-border text-text-secondary'
+                                                                }`}>
+                                                                    {track}
+                                                                </span>
+                                                                {idx < res.sequence.length - 1 && (
+                                                                    <span className="text-border">→</span>
+                                                                )}
+                                                            </React.Fragment>
+                                                        ))}
                                                     </div>
-                                                </td>
-                                                <td className={`px-6 py-4 font-bold ${winning ? 'text-primary' : 'text-text-primary'}`}>{res.totalSeek}</td>
-                                                <td className="px-6 py-4 text-text-secondary">{res.averageSeek.toFixed(2)}</td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button
-                                                        onClick={() => setExpandedRow(isExpanded ? null : res.algorithm)}
-                                                        className="text-primary hover:text-primary-hover flex items-center gap-1 ml-auto transition-colors"
-                                                    >
-                                                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                                        <span>View Order</span>
-                                                    </button>
                                                 </td>
                                             </tr>
-                                            {isExpanded && (
-                                                <tr className="bg-background/50">
-                                                    <td colSpan={4} className="px-6 py-4">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            {res.sequence.map((track, idx) => (
-                                                                <React.Fragment key={idx}>
-                                                                    <span className={`px-1.5 py-0.5 rounded-sm border text-[10px] ${
-                                                                        idx === 0
-                                                                        ? 'bg-secondary/10 border-secondary/30 text-secondary'
-                                                                        : 'bg-surface/50 border-border text-text-secondary'
-                                                                    }`}>
-                                                                        {track}
-                                                                    </span>
-                                                                    {idx < res.sequence.length - 1 && (
-                                                                        <span className="text-border">→</span>
-                                                                    )}
-                                                                </React.Fragment>
-                                                            ))}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-            </div>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
           </>
         )}
       </div>
