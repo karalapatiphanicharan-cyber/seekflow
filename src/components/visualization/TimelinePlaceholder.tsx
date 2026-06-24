@@ -9,7 +9,6 @@ interface Props {
 export const TimelinePlaceholder: React.FC<Props> = ({ result, playbackStep }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to current playback step
   useEffect(() => {
     if (containerRef.current) {
         const activeNode = containerRef.current.querySelector('[data-active="true"]');
@@ -46,25 +45,25 @@ export const TimelinePlaceholder: React.FC<Props> = ({ result, playbackStep }) =
                     isActive
                         ? 'border-primary bg-primary/20 text-primary scale-110 shadow-[0_0_15px_rgba(217,119,6,0.3)] z-10'
                         : isCompleted
-                            ? 'border-success/50 bg-success/10 text-success/80 opacity-60'
-                            : 'border-border bg-background text-text-primary/40'
+                            ? 'border-success bg-success/10 text-success shadow-[0_0_10px_rgba(21,128,61,0.2)]'
+                            : 'border-border bg-background text-text-primary/20'
                     }`}
                 >
                     {track}
                 </div>
                 <span className={`text-[10px] font-mono uppercase transition-colors duration-300 ${
-                    isActive ? 'text-primary font-bold' : isCompleted ? 'text-success/60' : 'text-text-secondary/40'
+                    isActive ? 'text-primary font-bold' : isCompleted ? 'text-success' : 'text-text-secondary/40'
                 }`}>
-                    {i === 0 ? 'Start' : `Pos ${i}`}
+                    {i === 0 ? 'Start' : isCompleted ? 'Served' : isActive ? 'Active' : 'Pending'}
                 </span>
                 </div>
                 {i < result.sequence.length - 1 && (
                 <div className="flex flex-col items-center pt-6">
                     <div className={`w-12 h-[1px] relative transition-colors duration-300 ${
-                        isCompleted ? 'bg-success/30' : 'bg-border/30'
+                        isCompleted ? 'bg-success/50' : 'bg-border/30'
                     }`}>
                     <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-1 text-[8px] font-mono transition-colors duration-300 ${
-                        isCompleted ? 'bg-surface text-success/60' : 'bg-surface text-text-secondary/30'
+                        isCompleted ? 'bg-surface text-success' : 'bg-surface text-text-secondary/30'
                     }`}>
                         {result.movements[i]}
                     </div>
@@ -74,11 +73,6 @@ export const TimelinePlaceholder: React.FC<Props> = ({ result, playbackStep }) =
             </React.Fragment>
           );
         })}
-        <div className="flex flex-col items-center gap-2 opacity-20">
-          <div className="w-12 h-12 flex items-center justify-center rounded-sm border-2 border-dashed border-border/50 text-text-secondary font-mono text-[8px] uppercase text-center px-1">
-            End
-          </div>
-        </div>
       </div>
     </div>
   );
