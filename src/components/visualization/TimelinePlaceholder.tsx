@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import type { SimulationResult } from '../../algorithms/types';
 
 interface Props {
@@ -9,14 +9,7 @@ interface Props {
 export const TimelinePlaceholder: React.FC<Props> = ({ result, playbackStep }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (containerRef.current) {
-        const activeNode = containerRef.current.querySelector('[data-active="true"]');
-        if (activeNode) {
-            activeNode.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-    }
-  }, [playbackStep]);
+  // Removed scrollIntoView behavior to prevent automatic viewport repositioning during playback
 
   if (!result) {
     return (
