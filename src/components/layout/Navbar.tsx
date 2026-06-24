@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, Github } from 'lucide-react';
+import { BarChart2, Github, Info, Mail } from 'lucide-react';
 import { PlaybackControls } from '../controls/PlaybackControls';
 
 const SeekFlowLogo = () => (
@@ -11,9 +11,11 @@ const SeekFlowLogo = () => (
   </svg>
 );
 
+export type Page = 'simulator' | 'compare' | 'about' | 'contact' | 'privacy' | 'terms' | 'disclaimer' | 'algorithms';
+
 interface NavbarProps {
-  currentPage: 'simulator' | 'compare';
-  onPageChange: (page: 'simulator' | 'compare') => void;
+  currentPage: string;
+  onPageChange: (page: Page) => void;
   playback?: {
     isPlaying: boolean;
     onTogglePlay: () => void;
@@ -55,9 +57,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onPageChange, playb
 
         {/* Navigation Area */}
         <div className="flex items-center gap-2 md:gap-4 text-sm font-mono flex-shrink-0">
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); onPageChange('simulator'); }}
+          <button
+            onClick={() => onPageChange('simulator')}
             className={`px-3 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
                 currentPage === 'simulator'
                 ? 'text-primary bg-primary/10'
@@ -65,11 +66,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onPageChange, playb
             }`}
           >
             <span className="font-medium">Simulator</span>
-          </a>
+          </button>
 
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); onPageChange('compare'); }}
+          <button
+            onClick={() => onPageChange('compare')}
             className={`px-3 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
                 currentPage === 'compare'
                 ? 'text-primary bg-primary/10'
@@ -78,7 +78,31 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onPageChange, playb
           >
             <BarChart2 size={18} className="opacity-80" />
             <span className="hidden xl:inline font-medium">Compare</span>
-          </a>
+          </button>
+
+          <button
+            onClick={() => onPageChange('about')}
+            className={`px-3 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
+                currentPage === 'about'
+                ? 'text-primary bg-primary/10'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'
+            }`}
+          >
+            <Info size={18} className="opacity-80" />
+            <span className="hidden xl:inline font-medium">About</span>
+          </button>
+
+          <button
+            onClick={() => onPageChange('contact')}
+            className={`px-3 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
+                currentPage === 'contact'
+                ? 'text-primary bg-primary/10'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'
+            }`}
+          >
+            <Mail size={18} className="opacity-80" />
+            <span className="hidden xl:inline font-medium">Contact</span>
+          </button>
 
           <div className="w-px h-6 bg-border mx-1 hidden lg:block" />
 
