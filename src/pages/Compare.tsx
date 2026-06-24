@@ -18,19 +18,25 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { Trophy, ChevronDown, ChevronUp, Activity, BarChart3, ListChecks } from 'lucide-react';
+import { Trophy, ChevronDown, ChevronUp, Activity, BarChart3, ListChecks, RotateCcw, Dice5, Lightbulb, Loader2 } from 'lucide-react';
+
+const DEFAULT_HEAD = 53;
+const DEFAULT_DISK_SIZE = 200;
+const DEFAULT_DIRECTION: Direction = 'right';
+const EXAMPLE_REQUESTS = '98, 183, 37, 122, 14, 124, 65, 67';
 
 const Compare: React.FC = () => {
   // Input State
-  const [head, setHead] = useState<number>(53);
-  const [diskSize, setDiskSize] = useState<number>(200);
-  const [direction, setDirection] = useState<Direction>('right');
-  const [requestString, setRequestString] = useState<string>('98, 183, 37, 122, 14, 124, 65, 67');
+  const [head, setHead] = useState<number>(DEFAULT_HEAD);
+  const [diskSize, setDiskSize] = useState<number>(DEFAULT_DISK_SIZE);
+  const [direction, setDirection] = useState<Direction>(DEFAULT_DIRECTION);
+  const [requestString, setRequestString] = useState<string>(EXAMPLE_REQUESTS);
 
   // Results State
   const [results, setResults] = useState<SimulationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const parsedRequests = useMemo(() => {
     if (!requestString.trim()) return [];
@@ -43,45 +49,90 @@ const Compare: React.FC = () => {
   }, [requestString]);
 
   const handleCompare = useCallback(() => {
-    // Validation
+    // 1. Validation
+    if (!requestString.trim()) {
+        setError('Request sequence cannot be empty.');
+        return;
+    }
+
     if (isNaN(head) || head < 0 || head >= diskSize) {
       setError(`Initial head position must be between 0 and ${diskSize - 1}.`);
       return;
     }
+
     const parts = requestString.split(',').map(s => s.trim()).filter(s => s !== '');
     for (const part of parts) {
         const n = Number(part);
-        if (isNaN(n) || n < 0 || n >= diskSize) {
-            setError(`Invalid request sequence. Ensure all tracks are between 0 and ${diskSize - 1}.`);
+        if (isNaN(n)) {
+            setError(`Invalid value detected: "${part}". Please use numeric values only.`);
+            return;
+        }
+        if (n < 0 || n >= diskSize) {
+            setError(`Request ${n} is outside disk boundaries (0-${diskSize - 1}).`);
             return;
         }
     }
 
     setError(null);
-    const input: SimulationInput = {
-      requests: parsedRequests,
-      head,
-      diskSize,
-      direction,
-    };
+    setIsLoading(true);
+    setResults(null);
+    setExpandedRow(null);
 
-    const allResults = [
-        fcfs(input),
-        sstf(input),
-        scan(input),
-        cscan(input),
-        look(input),
-        clook(input)
-    ];
+    // Simulate async execution
+    setTimeout(() => {
+        const input: SimulationInput = {
+          requests: parsedRequests,
+          head,
+          diskSize,
+          direction,
+        };
 
-    setResults(allResults);
+        const allResults = [
+            fcfs(input),
+            sstf(input),
+            scan(input),
+            cscan(input),
+            look(input),
+            clook(input)
+        ];
+
+        setResults(allResults);
+        setIsLoading(false);
+    }, 400);
   }, [head, diskSize, direction, parsedRequests, requestString]);
+
+  const handleRandom = useCallback(() => {
+    const count = Math.floor(Math.random() * 5) + 8; // 8-12
+    const randomSet = new Set<number>();
+    while (randomSet.size < count) {
+        randomSet.add(Math.floor(Math.random() * diskSize));
+    }
+    // Simple shuffle logic without unused vars
+    setRequestString(Array.from(randomSet).sort(() => Math.random() - 0.5).join(', '));
+    setError(null);
+  }, [diskSize]);
+
+  const handleExample = useCallback(() => {
+    setHead(53);
+    setDiskSize(200);
+    setDirection('right');
+    setRequestString(EXAMPLE_REQUESTS);
+    setError(null);
+  }, []);
+
+  const handleClear = useCallback(() => {
+    setHead(DEFAULT_HEAD);
+    setDiskSize(DEFAULT_DISK_SIZE);
+    setDirection(DEFAULT_DIRECTION);
+    setRequestString('');
+    setResults(null);
+    setError(null);
+    setExpandedRow(null);
+  }, []);
 
   const bestResult = useMemo(() => {
     if (!results) return null;
-    return results.reduce((prev, curr) =>
-        curr.totalSeek < prev.totalSeek ? curr : prev
-    );
+    return [...results].sort((a, b) => a.totalSeek - b.totalSeek)[0];
   }, [results]);
 
   const chartData = useMemo(() => {
@@ -99,9 +150,29 @@ const Compare: React.FC = () => {
         {/* Header Section */}
         <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <SectionTitle subtitle="Analyze and compare algorithm efficiency">Performance Comparison</SectionTitle>
-            <Button variant="primary" size="lg" onClick={handleCompare} className="md:w-48 shadow-lg shadow-primary/20">
-                <Activity size={18} className="mr-2" /> Compare All
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={handleExample} disabled={isLoading}>
+                    <Lightbulb size={14} className="mr-1.5" /> Example
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleRandom} disabled={isLoading}>
+                    <Dice5 size={14} className="mr-1.5" /> Random
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleClear} disabled={isLoading}>
+                    <RotateCcw size={14} className="mr-1.5" /> Clear
+                </Button>
+                <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+                <Button variant="primary" size="lg" onClick={handleCompare} disabled={isLoading} className="md:w-48 shadow-lg shadow-primary/20">
+                    {isLoading ? (
+                        <>
+                            <Loader2 size={18} className="mr-2 animate-spin" /> Comparing...
+                        </>
+                    ) : (
+                        <>
+                            <Activity size={18} className="mr-2" /> Compare All
+                        </>
+                    )}
+                </Button>
+            </div>
         </section>
 
         {/* Inputs Section */}
@@ -121,31 +192,41 @@ const Compare: React.FC = () => {
             )}
         </Card>
 
-        {results && (
+        {!results && !isLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center text-text-secondary border-2 border-dashed border-border/50 rounded-sm">
+                 <BarChart3 size={48} className="opacity-20 mb-4" />
+                 <p className="font-mono text-sm uppercase tracking-widest opacity-50">Configure parameters and click "Compare All"</p>
+            </div>
+        ) : isLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center">
+                 <Loader2 size={48} className="text-primary animate-spin mb-4" />
+                 <p className="font-mono text-sm uppercase tracking-widest text-primary animate-pulse">Running Calculations</p>
+            </div>
+        ) : results && (
           <>
             {/* Summary Cards */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-mono uppercase text-text-secondary">Best Performer</span>
+                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Best Performer</span>
                     <div className="flex items-center gap-2 mt-2">
                         <Trophy size={16} className="text-primary" />
                         <span className="text-lg font-bold text-text-primary">{bestResult?.algorithm}</span>
                     </div>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between border-l-4 border-l-primary">
-                    <span className="text-[10px] font-mono uppercase text-text-secondary">Lowest Seek</span>
-                    <span className="text-2xl font-bold text-text-primary mt-2">{bestResult?.totalSeek} <span className="text-xs font-normal text-text-secondary">tracks</span></span>
+                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Lowest Seek</span>
+                    <span className="text-2xl font-bold text-text-primary mt-2">{bestResult?.totalSeek} <span className="text-xs font-normal text-text-secondary uppercase">tracks</span></span>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-mono uppercase text-text-secondary">Avg Seek (Best)</span>
+                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Avg Seek (Best)</span>
                     <span className="text-lg font-bold text-text-primary mt-2">{bestResult?.averageSeek.toFixed(2)}</span>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-mono uppercase text-text-secondary">Algorithms</span>
+                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Algorithms</span>
                     <span className="text-lg font-bold text-text-primary mt-2">{results.length}</span>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-mono uppercase text-text-secondary">Total Requests</span>
+                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Total Requests</span>
                     <span className="text-lg font-bold text-text-primary mt-2">{bestResult?.completedRequests}</span>
                 </div>
             </section>
