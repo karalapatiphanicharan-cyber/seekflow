@@ -11,6 +11,7 @@ import { ActionButtons } from '../components/controls/ActionButtons';
 import { DiskCanvas } from '../components/visualization/DiskCanvas';
 import { MetricsGrid } from '../components/metrics/MetricsGrid';
 import { TimelinePlaceholder } from '../components/visualization/TimelinePlaceholder';
+import { StepCalculations } from '../components/metrics/StepCalculations';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { SimulationState } from '../hooks/useSimulation';
 
@@ -101,6 +102,12 @@ const Home: React.FC<HomeProps> = ({ sim }) => {
                 playbackStep={sim.playbackStep}
             />
           </Card>
+
+          {/* New Educational Calculations Section */}
+          <StepCalculations
+            result={sim.result}
+            playbackStep={sim.playbackStep}
+          />
         </section>
 
         <section>
