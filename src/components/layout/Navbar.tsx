@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, BarChart2, Github, Moon } from 'lucide-react';
+import { BarChart2, Github, Moon } from 'lucide-react';
 import { PlaybackControls } from '../controls/PlaybackControls';
 
 const SeekFlowLogo = () => (
@@ -12,6 +12,8 @@ const SeekFlowLogo = () => (
 );
 
 interface NavbarProps {
+  currentPage: 'simulator' | 'compare';
+  onPageChange: (page: 'simulator' | 'compare') => void;
   playback?: {
     isPlaying: boolean;
     onTogglePlay: () => void;
@@ -24,11 +26,14 @@ interface NavbarProps {
   };
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ playback }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentPage, onPageChange, playback }) => {
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
       <div className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 group cursor-default flex-shrink-0">
+        <div
+          className="flex items-center gap-3 group cursor-pointer flex-shrink-0"
+          onClick={() => onPageChange('simulator')}
+        >
           <div className="text-primary transition-transform group-hover:scale-110 duration-300">
             <SeekFlowLogo />
           </div>
@@ -38,8 +43,8 @@ export const Navbar: React.FC<NavbarProps> = ({ playback }) => {
           </span>
         </div>
 
-        {/* Playback Controls Integrated into Navbar */}
-        {playback && (
+        {/* Playback Controls Integrated into Navbar (Only for Simulator Page) */}
+        {currentPage === 'simulator' && playback && (
           <div className="flex-1 max-w-xl hidden md:block">
             <PlaybackControls
               {...playback}
@@ -48,18 +53,28 @@ export const Navbar: React.FC<NavbarProps> = ({ playback }) => {
           </div>
         )}
 
+        {/* Navigation Area */}
         <div className="flex items-center gap-2 md:gap-4 text-sm font-mono flex-shrink-0">
           <a
             href="#"
-            className="px-3 py-2 text-text-secondary hover:text-text-primary hover:bg-surface/50 rounded-sm transition-all duration-200 flex items-center gap-2"
+            onClick={(e) => { e.preventDefault(); onPageChange('simulator'); }}
+            className={`px-3 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
+                currentPage === 'simulator'
+                ? 'text-primary bg-primary/10'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'
+            }`}
           >
-            <FileText size={18} className="opacity-80" />
-            <span className="hidden xl:inline font-medium">Docs</span>
+            <span className="font-medium">Simulator</span>
           </a>
 
           <a
             href="#"
-            className="px-3 py-2 text-text-secondary hover:text-text-primary hover:bg-surface/50 rounded-sm transition-all duration-200 flex items-center gap-2"
+            onClick={(e) => { e.preventDefault(); onPageChange('compare'); }}
+            className={`px-3 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
+                currentPage === 'compare'
+                ? 'text-primary bg-primary/10'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'
+            }`}
           >
             <BarChart2 size={18} className="opacity-80" />
             <span className="hidden xl:inline font-medium">Compare</span>
@@ -84,8 +99,8 @@ export const Navbar: React.FC<NavbarProps> = ({ playback }) => {
         </div>
       </div>
 
-      {/* Mobile Playback Controls - shown below navbar on small screens if playback is available */}
-      {playback && (
+      {/* Mobile Playback Controls */}
+      {currentPage === 'simulator' && playback && (
         <div className="md:hidden border-t border-border px-4 py-2 bg-surface/10">
           <PlaybackControls
             {...playback}
