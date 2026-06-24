@@ -11,7 +11,7 @@ interface Props {
 
 export const TrackMarker: React.FC<Props> = ({ track, diskSize, stepIndex, totalSteps, isStart }) => {
   const left = `${(track / (diskSize - 1)) * 100}%`;
-  const stepHeight = 100 / (totalSteps - 1);
+  const stepHeight = totalSteps > 1 ? 100 / (totalSteps - 1) : 0;
   const top = `${stepIndex * stepHeight}%`;
 
   if (isStart) {
@@ -33,7 +33,9 @@ export const TrackMarker: React.FC<Props> = ({ track, diskSize, stepIndex, total
   }
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: 1, scale: 1 }}
       className="absolute z-10"
       style={{ left, top }}
     >
@@ -42,29 +44,29 @@ export const TrackMarker: React.FC<Props> = ({ track, diskSize, stepIndex, total
                 <span className="text-[9px] font-mono text-text-secondary">Track {track} <span className="text-text-primary/50 mx-1">|</span> Step {stepIndex}</span>
             </div>
         </div>
-    </div>
+    </motion.div>
   );
 };
 
 interface TrackMarkersProps {
   sequence: number[];
   diskSize: number;
+  totalSteps: number;
 }
 
-export const TrackMarkers: React.FC<TrackMarkersProps> = ({ sequence, diskSize }) => {
-  // We only render intermediate and start markers here.
-  // The final head is handled by HeadIndicator.
+export const TrackMarkers: React.FC<TrackMarkersProps> = ({ sequence, diskSize, totalSteps }) => {
   return (
     <>
       {sequence.map((track, i) => {
-        if (i === sequence.length - 1) return null; // Final head
+        // In playback mode, we don't want the last one to be a "marker" if it's currently the "head"
+        // But visibility is already controlled by passing the sliced sequence.
         return (
           <TrackMarker
             key={`marker-${i}`}
             track={track}
             diskSize={diskSize}
             stepIndex={i}
-            totalSteps={sequence.length}
+            totalSteps={totalSteps}
             isStart={i === 0}
           />
         );

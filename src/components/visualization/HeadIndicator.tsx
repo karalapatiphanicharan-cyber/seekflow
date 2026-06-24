@@ -10,13 +10,19 @@ interface Props {
 
 export const HeadIndicator: React.FC<Props> = ({ track, diskSize, stepIndex, totalSteps }) => {
   const left = `${(track / (diskSize - 1)) * 100}%`;
-  const stepHeight = 100 / (totalSteps - 1);
+  const stepHeight = totalSteps > 1 ? 100 / (totalSteps - 1) : 0;
   const top = `${stepIndex * stepHeight}%`;
 
   return (
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
+      initial={false}
+      animate={{ left, top }}
+      transition={{
+        type: "spring",
+        stiffness: 100,
+        damping: 20,
+        mass: 1
+      }}
       className="absolute z-30"
       style={{ left, top }}
     >

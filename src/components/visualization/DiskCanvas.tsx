@@ -2,6 +2,7 @@ import React from 'react';
 import type { SimulationResult, Direction } from '../../algorithms/types';
 import { HeadIndicator } from './HeadIndicator';
 import { TrackMarkers } from './TrackMarkers';
+import { motion } from 'framer-motion';
 
 interface Props {
   head: number;
@@ -9,22 +10,23 @@ interface Props {
   diskSize: number;
   result: SimulationResult | null;
   direction: Direction;
+  playbackStep: number;
 }
 
-export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result, direction }) => {
-  const sequence = result?.sequence || [];
+export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result, direction, playbackStep }) => {
+  const sequence = result?.sequence || [head];
   const algorithm = result?.algorithm || '';
 
-  // Refined Jump Detection: Check if movement contradicts algorithm flow
+  // Refined Jump Detection
   const isJump = (from: number, to: number) => {
     if (!algorithm.startsWith('C-')) return false;
-
-    // In C-SCAN/C-LOOK, any movement opposite to the specified direction is a logical jump
     if (direction === 'right' && to < from) return true;
     if (direction === 'left' && to > from) return true;
-
     return false;
   };
+
+  // Only show up to the current playback step
+  const visibleSequence = sequence.slice(0, playbackStep + 1);
 
   return (
     <div className="relative w-full h-[450px] bg-surface/30 rounded-sm border border-border/50 overflow-hidden group">
@@ -53,7 +55,7 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result, 
         </div>
 
         {/* Traversal Path */}
-        {result && sequence.length > 0 && (
+        {visibleSequence.length > 0 && (
            <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
              <defs>
                 <linearGradient id="path-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -62,25 +64,34 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result, 
                 </linearGradient>
              </defs>
 
-             {sequence.map((pos, i) => {
+             {visibleSequence.map((pos, i) => {
                if (i === 0) return null;
 
-               const stepHeight = 100 / (sequence.length - 1);
+               const totalSteps = result ? sequence.length : 1;
+               const stepHeight = 100 / (totalSteps - 1);
                const y1Val = (i - 1) * stepHeight;
                const y2Val = i * stepHeight;
                const y1 = `${y1Val}%`;
                const y2 = `${y2Val}%`;
 
-               const x1Val = (sequence[i-1] / (diskSize - 1)) * 100;
+               const x1Val = (visibleSequence[i-1] / (diskSize - 1)) * 100;
                const x2Val = (pos / (diskSize - 1)) * 100;
                const x1 = `${x1Val}%`;
                const x2 = `${x2Val}%`;
 
-               const jump = isJump(sequence[i-1], pos);
+               const jump = isJump(visibleSequence[i-1], pos);
 
                return (
-                 <g key={i}>
-                   <line
+                 <motion.g
+                    key={i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                 >
+                   <motion.line
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.5, ease: "easeInOut" }}
                       x1={x1} y1={y1}
                       x2={x2} y2={y2}
                       stroke={jump ? "rgba(156, 163, 175, 0.4)" : "url(#path-gradient)"}
@@ -89,59 +100,57 @@ export const DiskCanvas: React.FC<Props> = ({ head, requests, diskSize, result, 
                       strokeLinecap="round"
                    />
                    {jump && (
-                     <text
+                     <motion.text
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.7 }}
                         x={`${(x1Val + x2Val) / 2}%`}
                         y={`${(y1Val + y2Val) / 2}%`}
                         dy="-5"
                         textAnchor="middle"
-                        className="fill-text-secondary text-[8px] font-mono uppercase tracking-tighter opacity-70"
+                        className="fill-text-secondary text-[8px] font-mono uppercase tracking-tighter"
                      >
                        Logical Jump
-                     </text>
+                     </motion.text>
                    )}
-                 </g>
+                 </motion.g>
                );
              })}
            </svg>
         )}
 
         {/* Dynamic Markers & Head */}
-        {result && (
-          <>
-            <TrackMarkers sequence={sequence} diskSize={diskSize} />
-            <HeadIndicator
-                track={sequence[sequence.length - 1]}
-                diskSize={diskSize}
-                stepIndex={sequence.length - 1}
-                totalSteps={sequence.length}
-            />
-          </>
+        <TrackMarkers sequence={visibleSequence} diskSize={diskSize} totalSteps={sequence.length} />
+
+        {visibleSequence.length > 0 && (
+          <HeadIndicator
+            track={visibleSequence[visibleSequence.length - 1]}
+            diskSize={diskSize}
+            stepIndex={visibleSequence.length - 1}
+            totalSteps={sequence.length}
+          />
         )}
 
-        {/* Static State (Initial View) */}
-        {!result && (
-            <div className="absolute w-full h-full">
-                {/* Pending Requests on Axis */}
-                {requests.map((track, i) => (
+        {/* Pending Requests on Axis */}
+        <div className="absolute w-full h-full pointer-events-none">
+            {requests.map((track, i) => {
+                const isCompleted = visibleSequence.includes(track);
+                const isCurrent = result && visibleSequence[visibleSequence.length - 1] === track;
+
+                return (
                     <div
                         key={`pending-${track}-${i}`}
-                        className="absolute top-0 w-1.5 h-1.5 -ml-0.75 -mt-0.75 rounded-full bg-text-secondary/20 border border-border/50"
+                        className={`absolute top-0 w-1.5 h-1.5 -ml-0.75 -mt-0.75 rounded-full border transition-all duration-300 ${
+                            isCurrent
+                                ? 'bg-primary border-primary scale-150 z-20 shadow-[0_0_8px_rgba(217,119,6,0.8)]'
+                                : isCompleted
+                                    ? 'bg-success/40 border-success/20 scale-100'
+                                    : 'bg-text-secondary/20 border-border/50 scale-100'
+                        }`}
                         style={{ left: `${(track / (diskSize - 1)) * 100}%` }}
                     />
-                ))}
-
-                {/* Initial Head Position */}
-                <div
-                    className="absolute"
-                    style={{ left: `${(head / (diskSize - 1)) * 100}%`, top: '0' }}
-                >
-                    <div className="w-4 h-4 -ml-2 -mt-2 rounded-full bg-secondary border-2 border-secondary-hover shadow-[0_0_15px_rgba(37,99,235,0.4)]" />
-                    <div className="mt-3 -ml-4 px-1.5 py-0.5 bg-secondary/10 border border-secondary/30 rounded-sm">
-                        <span className="text-[9px] font-mono text-secondary font-bold uppercase tracking-wider">Initial Head: {head}</span>
-                    </div>
-                </div>
-            </div>
-        )}
+                );
+            })}
+        </div>
 
         {/* Legend */}
         <div className="absolute -bottom-8 left-0 flex gap-6 opacity-80">

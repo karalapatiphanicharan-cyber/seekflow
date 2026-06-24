@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { SimulationInput, SimulationResult, Direction } from '../algorithms/types';
 import { fcfs, sstf, scan, cscan, look, clook } from '../algorithms';
 
@@ -19,6 +19,23 @@ export const useSimulation = () => {
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Playback State
+  const [playbackStep, setPlaybackStep] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+
+  // Use refs to avoid recreating the timer effect on every step change
+  const playbackStepRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const resultRef = useRef<SimulationResult | null>(null);
+  const speedRef = useRef(1);
+
+  // Sync refs with state
+  useEffect(() => { playbackStepRef.current = playbackStep; }, [playbackStep]);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { resultRef.current = result; }, [result]);
+  useEffect(() => { speedRef.current = playbackSpeed; }, [playbackSpeed]);
+
   const parsedRequests = useMemo(() => {
     if (!requestString.trim()) return [];
     return requestString
@@ -37,7 +54,6 @@ export const useSimulation = () => {
       return 'Disk size must be a positive number.';
     }
 
-    // Improved parsing validation
     const parts = requestString.split(',').map(s => s.trim()).filter(s => s !== '');
     if (parts.length === 0 && requestString.trim() !== '') {
         return 'Invalid request sequence. Please use comma-separated numbers.';
@@ -55,6 +71,11 @@ export const useSimulation = () => {
 
     return null;
   }, [head, diskSize, requestString]);
+
+  const resetPlayback = useCallback(() => {
+    setIsPlaying(false);
+    setPlaybackStep(0);
+  }, []);
 
   const runSimulation = useCallback(() => {
     const validationError = validate();
@@ -97,7 +118,51 @@ export const useSimulation = () => {
     }
 
     setResult(simulationResult);
-  }, [algorithm, head, diskSize, direction, parsedRequests, validate]);
+    resetPlayback();
+  }, [algorithm, head, diskSize, direction, parsedRequests, validate, resetPlayback]);
+
+  // Handle configuration changes
+  useEffect(() => {
+    resetPlayback();
+    setResult(null);
+  }, [algorithm, head, diskSize, direction, requestString, resetPlayback]);
+
+  const togglePlay = useCallback(() => {
+    if (!result) return;
+    setIsPlaying(prev => !prev);
+  }, [result]);
+
+  const nextStep = useCallback(() => {
+    if (!result) return;
+    setPlaybackStep(prev => Math.min(prev + 1, result.sequence.length - 1));
+  }, [result]);
+
+  const prevStep = useCallback(() => {
+    if (!result) return;
+    setPlaybackStep(prev => Math.max(prev - 1, 0));
+  }, [result]);
+
+  // Unified timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
+    const tick = () => {
+      if (isPlayingRef.current && resultRef.current && playbackStepRef.current < resultRef.current.sequence.length - 1) {
+        setPlaybackStep(prev => prev + 1);
+        timer = setTimeout(tick, 1000 / speedRef.current);
+      } else if (playbackStepRef.current >= (resultRef.current?.sequence.length || 0) - 1) {
+        setIsPlaying(false);
+      }
+    };
+
+    if (isPlaying) {
+        timer = setTimeout(tick, 1000 / playbackSpeed);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isPlaying, playbackSpeed]);
 
   const generateRandom = useCallback(() => {
     const count = Math.floor(Math.random() * 5) + 8; // 8-12
@@ -107,8 +172,9 @@ export const useSimulation = () => {
     }
     setRequestString(Array.from(randomSet).join(', '));
     setError(null);
-    setResult(null); // Clear previous results when inputs change
-  }, [diskSize]);
+    setResult(null);
+    resetPlayback();
+  }, [diskSize, resetPlayback]);
 
   const loadExample = useCallback(() => {
     setAlgorithm('FCFS');
@@ -118,7 +184,8 @@ export const useSimulation = () => {
     setRequestString('98, 183, 37, 122, 14, 124, 65, 67');
     setError(null);
     setResult(null);
-  }, []);
+    resetPlayback();
+  }, [resetPlayback]);
 
   const reset = useCallback(() => {
     setAlgorithm('FCFS');
@@ -128,7 +195,8 @@ export const useSimulation = () => {
     setRequestString('');
     setResult(null);
     setError(null);
-  }, []);
+    resetPlayback();
+  }, [resetPlayback]);
 
   return {
     algorithm, setAlgorithm,
@@ -143,6 +211,15 @@ export const useSimulation = () => {
     generateRandom,
     loadExample,
     reset,
+    // Playback
+    playbackStep,
+    isPlaying,
+    playbackSpeed,
+    setPlaybackSpeed,
+    togglePlay,
+    resetPlayback,
+    nextStep,
+    prevStep,
   };
 };
 
