@@ -8,6 +8,13 @@
 
 **SeekFlow** is a premium-quality web application designed to visualize and analyze Operating System Disk Scheduling Algorithms. Built with a professional "Mission Control" industrial aesthetic, it provides an engineering-focused dashboard for real-time simulation and performance benchmarking.
 
+## 🚀 Live Demo
+
+🔗 **https://seekflow-eight.vercel.app/**
+
+
+
+
 ## 🖼️ Preview
 
 ### 🖥️ Real-Time Simulator
