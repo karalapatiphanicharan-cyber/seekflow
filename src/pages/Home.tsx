@@ -13,7 +13,7 @@ import { MetricsGrid } from '../components/metrics/MetricsGrid';
 import { TimelinePlaceholder } from '../components/visualization/TimelinePlaceholder';
 import { PlaybackControls } from '../components/controls/PlaybackControls';
 import { useSimulation } from '../hooks/useSimulation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
 
 const Home: React.FC = () => {
   const sim = useSimulation();
@@ -78,9 +78,9 @@ const Home: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto p-5 space-y-6">
         <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <SectionTitle subtitle="Real-time track visualization">Visualization</SectionTitle>
-            <div className="flex-1 max-w-md">
+            <div className="w-full xl:max-w-lg">
               <PlaybackControls
                 isPlaying={sim.isPlaying}
                 onTogglePlay={sim.togglePlay}
@@ -93,16 +93,51 @@ const Home: React.FC = () => {
               />
             </div>
           </div>
-          <Card className="min-h-[400px] flex flex-col justify-center px-10">
-            <DiskCanvas
-              head={sim.head}
-              requests={sim.parsedRequests}
-              diskSize={sim.diskSize}
-              result={sim.result}
-              direction={sim.direction}
-              playbackStep={sim.playbackStep}
-            />
-          </Card>
+
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <Card className="xl:col-span-3 min-h-[450px] flex flex-col justify-center px-10 relative overflow-hidden">
+                <DiskCanvas
+                  head={sim.head}
+                  requests={sim.parsedRequests}
+                  diskSize={sim.diskSize}
+                  result={sim.result}
+                  direction={sim.direction}
+                  playbackStep={sim.playbackStep}
+                />
+            </Card>
+
+            <Card className="p-5 flex flex-col gap-4 bg-surface/10">
+                <div className="flex items-center gap-2 text-primary">
+                    <Info size={16} />
+                    <h3 className="text-xs font-mono font-bold uppercase tracking-widest">Session Info</h3>
+                </div>
+                <div className="space-y-3 font-mono text-[10px] uppercase tracking-wider text-text-secondary">
+                    <div className="flex justify-between border-b border-border/30 pb-2">
+                        <span>Algorithm</span>
+                        <span className="text-text-primary">{sim.algorithm}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/30 pb-2">
+                        <span>Disk Range</span>
+                        <span className="text-text-primary">0 - {sim.diskSize - 1}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/30 pb-2">
+                        <span>Start Pos</span>
+                        <span className="text-text-primary">{sim.head}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/30 pb-2">
+                        <span>Direction</span>
+                        <span className="text-text-primary capitalize">{sim.direction}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/30 pb-2">
+                        <span>Requests</span>
+                        <span className="text-text-primary">{sim.parsedRequests.length}</span>
+                    </div>
+                </div>
+                <div className="mt-auto pt-4 text-[9px] text-text-secondary/50 leading-relaxed italic">
+                    Simulation computed based on standard OS scheduling principles. Use playback to observe head movement.
+                </div>
+            </Card>
+          </div>
         </section>
 
         <section>

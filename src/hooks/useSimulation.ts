@@ -24,13 +24,11 @@ export const useSimulation = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
 
-  // Use refs to avoid recreating the timer effect on every step change
   const playbackStepRef = useRef(0);
   const isPlayingRef = useRef(false);
   const resultRef = useRef<SimulationResult | null>(null);
   const speedRef = useRef(1);
 
-  // Sync refs with state
   useEffect(() => { playbackStepRef.current = playbackStep; }, [playbackStep]);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   useEffect(() => { resultRef.current = result; }, [result]);
@@ -118,10 +116,11 @@ export const useSimulation = () => {
     }
 
     setResult(simulationResult);
-    resetPlayback();
-  }, [algorithm, head, diskSize, direction, parsedRequests, validate, resetPlayback]);
+    setPlaybackStep(0);
+    // Auto-start playback
+    setTimeout(() => setIsPlaying(true), 100);
+  }, [algorithm, head, diskSize, direction, parsedRequests, validate]);
 
-  // Handle configuration changes
   useEffect(() => {
     resetPlayback();
     setResult(null);
@@ -142,7 +141,6 @@ export const useSimulation = () => {
     setPlaybackStep(prev => Math.max(prev - 1, 0));
   }, [result]);
 
-  // Unified timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
 
