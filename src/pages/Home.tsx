@@ -11,6 +11,7 @@ import { ActionButtons } from '../components/controls/ActionButtons';
 import { DiskCanvas } from '../components/visualization/DiskCanvas';
 import { MetricsGrid } from '../components/metrics/MetricsGrid';
 import { TimelinePlaceholder } from '../components/visualization/TimelinePlaceholder';
+import { PlaybackControls } from '../components/controls/PlaybackControls';
 import { useSimulation } from '../hooks/useSimulation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -76,8 +77,22 @@ const Home: React.FC = () => {
       </button>
 
       <main className="flex-1 overflow-y-auto p-5 space-y-6">
-        <section>
-          <SectionTitle subtitle="Real-time track visualization">Visualization</SectionTitle>
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <SectionTitle subtitle="Real-time track visualization">Visualization</SectionTitle>
+            <div className="flex-1 max-w-md">
+              <PlaybackControls
+                isPlaying={sim.isPlaying}
+                onTogglePlay={sim.togglePlay}
+                onReset={sim.resetPlayback}
+                onNext={sim.nextStep}
+                onPrev={sim.prevStep}
+                speed={sim.playbackSpeed}
+                onSpeedChange={sim.setPlaybackSpeed}
+                disabled={!sim.result}
+              />
+            </div>
+          </div>
           <Card className="min-h-[400px] flex flex-col justify-center px-10">
             <DiskCanvas
               head={sim.head}
@@ -85,19 +100,26 @@ const Home: React.FC = () => {
               diskSize={sim.diskSize}
               result={sim.result}
               direction={sim.direction}
+              playbackStep={sim.playbackStep}
             />
           </Card>
         </section>
 
         <section>
           <SectionTitle subtitle="System performance indicators">Metrics</SectionTitle>
-          <MetricsGrid result={sim.result} />
+          <MetricsGrid
+            result={sim.result}
+            playbackStep={sim.playbackStep}
+          />
         </section>
 
         <section>
           <SectionTitle subtitle="Step-by-step execution log">Execution</SectionTitle>
           <Card>
-            <TimelinePlaceholder result={sim.result} />
+            <TimelinePlaceholder
+                result={sim.result}
+                playbackStep={sim.playbackStep}
+            />
           </Card>
         </section>
       </main>
