@@ -16,7 +16,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  Cell,
+  LabelList
 } from 'recharts';
 import { Trophy, ChevronDown, ChevronUp, Activity, BarChart3, ListChecks, RotateCcw, Dice5, Lightbulb, Loader2 } from 'lucide-react';
 
@@ -24,6 +25,14 @@ const DEFAULT_HEAD = 53;
 const DEFAULT_DISK_SIZE = 200;
 const DEFAULT_DIRECTION: Direction = 'right';
 const EXAMPLE_REQUESTS = '98, 183, 37, 122, 14, 124, 65, 67';
+
+interface ChartDataItem {
+  name: string;
+  seek: number;
+  avg: number;
+  rank: number;
+  isWinner: boolean;
+}
 
 const Compare: React.FC = () => {
   // Input State
@@ -49,7 +58,6 @@ const Compare: React.FC = () => {
   }, [requestString]);
 
   const handleCompare = useCallback(() => {
-    // 1. Validation
     if (!requestString.trim()) {
         setError('Request sequence cannot be empty.');
         return;
@@ -78,7 +86,6 @@ const Compare: React.FC = () => {
     setResults(null);
     setExpandedRow(null);
 
-    // Simulate async execution
     setTimeout(() => {
         const input: SimulationInput = {
           requests: parsedRequests,
@@ -107,7 +114,6 @@ const Compare: React.FC = () => {
     while (randomSet.size < count) {
         randomSet.add(Math.floor(Math.random() * diskSize));
     }
-    // Simple shuffle logic without unused vars
     setRequestString(Array.from(randomSet).sort(() => Math.random() - 0.5).join(', '));
     setError(null);
   }, [diskSize]);
@@ -130,18 +136,22 @@ const Compare: React.FC = () => {
     setExpandedRow(null);
   }, []);
 
-  const bestResult = useMemo(() => {
-    if (!results) return null;
-    return [...results].sort((a, b) => a.totalSeek - b.totalSeek)[0];
+  const winners = useMemo(() => {
+    if (!results) return [];
+    const minSeek = Math.min(...results.map(r => r.totalSeek));
+    return results.filter(r => r.totalSeek === minSeek);
   }, [results]);
 
-  const chartData = useMemo(() => {
+  const sortedChartData = useMemo(() => {
     if (!results) return [];
-    return results.map(r => ({
+    return [...results].sort((a, b) => a.totalSeek - b.totalSeek).map((r, index) => ({
       name: r.algorithm,
-      seek: r.totalSeek
+      seek: r.totalSeek,
+      avg: r.averageSeek,
+      rank: index + 1,
+      isWinner: winners.some(w => w.algorithm === r.algorithm)
     }));
-  }, [results]);
+  }, [results, winners]);
 
   return (
     <main className="flex-1 overflow-y-auto p-5 space-y-8 bg-background">
@@ -193,9 +203,9 @@ const Compare: React.FC = () => {
         </Card>
 
         {!results && !isLoading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-text-secondary border-2 border-dashed border-border/50 rounded-sm">
+            <div className="py-20 flex flex-col items-center justify-center text-text-secondary border-2 border-dashed border-border/50 rounded-sm bg-surface/5">
                  <BarChart3 size={48} className="opacity-20 mb-4" />
-                 <p className="font-mono text-sm uppercase tracking-widest opacity-50">Configure parameters and click "Compare All"</p>
+                 <p className="font-mono text-sm uppercase tracking-widest opacity-50">Run Compare All to visualize Total Seek Distance.</p>
             </div>
         ) : isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center">
@@ -206,20 +216,24 @@ const Compare: React.FC = () => {
           <>
             {/* Summary Cards */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Best Performer</span>
+                <div className={`p-4 border rounded-sm flex flex-col justify-between transition-colors ${winners.length > 1 ? 'bg-secondary/5 border-secondary/30' : 'bg-primary/5 border-primary/30'}`}>
+                    <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">
+                        {winners.length > 1 ? `${winners.length}-Way Tie` : 'Best Performer'}
+                    </span>
                     <div className="flex items-center gap-2 mt-2">
-                        <Trophy size={16} className="text-primary" />
-                        <span className="text-lg font-bold text-text-primary">{bestResult?.algorithm}</span>
+                        <Trophy size={16} className={winners.length > 1 ? 'text-secondary' : 'text-primary'} />
+                        <span className="text-sm font-bold text-text-primary break-all leading-tight">
+                            {winners.map(w => w.algorithm).join(', ')}
+                        </span>
                     </div>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between border-l-4 border-l-primary">
                     <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Lowest Seek</span>
-                    <span className="text-2xl font-bold text-text-primary mt-2">{bestResult?.totalSeek} <span className="text-xs font-normal text-text-secondary uppercase">tracks</span></span>
+                    <span className="text-2xl font-bold text-text-primary mt-2">{winners[0]?.totalSeek} <span className="text-xs font-normal text-text-secondary uppercase">tracks</span></span>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
                     <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Avg Seek (Best)</span>
-                    <span className="text-lg font-bold text-text-primary mt-2">{bestResult?.averageSeek.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-text-primary mt-2">{winners[0]?.averageSeek.toFixed(2)}</span>
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
                     <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Algorithms</span>
@@ -227,20 +241,25 @@ const Compare: React.FC = () => {
                 </div>
                 <div className="p-4 bg-surface/50 border border-border rounded-sm flex flex-col justify-between">
                     <span className="text-[10px] font-mono uppercase text-text-secondary tracking-widest">Total Requests</span>
-                    <span className="text-lg font-bold text-text-primary mt-2">{bestResult?.completedRequests}</span>
+                    <span className="text-lg font-bold text-text-primary mt-2">{results[0]?.completedRequests}</span>
                 </div>
             </section>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Chart Section */}
-                <Card className="lg:col-span-1 p-6 flex flex-col h-[400px]">
+                <Card className="lg:col-span-1 p-6 flex flex-col min-h-[400px]">
                     <div className="flex items-center gap-2 mb-6">
                         <BarChart3 size={16} className="text-primary" />
                         <h3 className="text-xs font-mono font-bold uppercase tracking-widest">Total Seek Comparison</h3>
                     </div>
                     <div className="flex-1">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} layout="vertical" margin={{ left: -20 }}>
+                            <BarChart
+                                data={sortedChartData}
+                                layout="vertical"
+                                margin={{ left: -10, right: 40 }}
+                                barSize={32}
+                            >
                                 <CartesianGrid strokeDasharray="3 3" stroke="#2F3B4C" horizontal={true} vertical={false} />
                                 <XAxis type="number" hide />
                                 <YAxis
@@ -249,21 +268,60 @@ const Compare: React.FC = () => {
                                     stroke="#9CA3AF"
                                     fontSize={10}
                                     fontFamily="JetBrains Mono"
-                                    width={60}
+                                    width={70}
+                                    axisLine={false}
+                                    tickLine={false}
                                 />
                                 <Tooltip
                                     cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                                    contentStyle={{
-                                        backgroundColor: '#1B2430',
-                                        border: '1px solid #2F3B4C',
-                                        fontSize: '11px',
-                                        fontFamily: 'JetBrains Mono'
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            const data = payload[0].payload as ChartDataItem;
+                                            return (
+                                                <div className="bg-surface border border-border p-3 font-mono text-[10px] shadow-xl">
+                                                    <p className="text-text-primary font-bold mb-2 uppercase border-b border-border pb-1">
+                                                        {data.name} {data.isWinner && '🏆'}
+                                                    </p>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between gap-4">
+                                                            <span className="text-text-secondary">TOTAL SEEK:</span>
+                                                            <span className="text-primary font-bold">{data.seek}</span>
+                                                        </div>
+                                                        <div className="flex justify-between gap-4">
+                                                            <span className="text-text-secondary">AVG SEEK:</span>
+                                                            <span className="text-text-primary">{data.avg.toFixed(2)}</span>
+                                                        </div>
+                                                        <div className="flex justify-between gap-4">
+                                                            <span className="text-text-secondary">RANK:</span>
+                                                            <span className="text-text-primary">#{data.rank}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
                                     }}
                                 />
-                                <Bar dataKey="seek" radius={[0, 2, 2, 0]}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.name === bestResult?.algorithm ? '#D97706' : '#2F3B4C'} />
+                                <Bar dataKey="seek" radius={[0, 4, 4, 0]} animationDuration={1000}>
+                                    {sortedChartData.map((entry, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={entry.isWinner ? '#D97706' : '#2F3B4C'}
+                                            fillOpacity={entry.isWinner ? 1 : 0.6}
+                                        />
                                     ))}
+                                    <LabelList
+                                        dataKey="seek"
+                                        position="right"
+                                        fill="#F3F4F6"
+                                        fontSize={10}
+                                        fontFamily="JetBrains Mono"
+                                        offset={10}
+                                        formatter={(value: number, _index: number, entry: { payload: ChartDataItem }) => {
+                                            const data = entry.payload;
+                                            return `${value} ${data.isWinner ? '🏆' : ''}`;
+                                        }}
+                                    />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
@@ -288,21 +346,21 @@ const Compare: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-border/50">
                                 {results.map((res) => {
-                                    const isBest = res.algorithm === bestResult?.algorithm;
+                                    const winning = winners.some(w => w.algorithm === res.algorithm);
                                     const isExpanded = expandedRow === res.algorithm;
 
                                     return (
                                         <React.Fragment key={res.algorithm}>
-                                            <tr className={`transition-colors hover:bg-surface/30 ${isBest ? 'bg-primary/5' : ''}`}>
+                                            <tr className={`transition-colors hover:bg-surface/30 ${winning ? 'bg-primary/5' : ''}`}>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`font-bold ${isBest ? 'text-primary' : 'text-text-primary'}`}>
+                                                        <span className={`font-bold ${winning ? 'text-primary' : 'text-text-primary'}`}>
                                                             {res.algorithm}
                                                         </span>
-                                                        {isBest && <Trophy size={12} className="text-primary" />}
+                                                        {winning && <Trophy size={12} className="text-primary" />}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-text-primary font-bold">{res.totalSeek}</td>
+                                                <td className={`px-6 py-4 font-bold ${winning ? 'text-primary' : 'text-text-primary'}`}>{res.totalSeek}</td>
                                                 <td className="px-6 py-4 text-text-secondary">{res.averageSeek.toFixed(2)}</td>
                                                 <td className="px-6 py-4 text-right">
                                                     <button

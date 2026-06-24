@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, Github, Moon } from 'lucide-react';
+import { BarChart2, Github } from 'lucide-react';
 import { PlaybackControls } from '../controls/PlaybackControls';
 
 const SeekFlowLogo = () => (
@@ -83,19 +83,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onPageChange, playb
           <div className="w-px h-6 bg-border mx-1 hidden lg:block" />
 
           <a
-            href="#"
+            href="https://github.com/karalapatiphanicharan-cyber/seekflow"
+            target="_blank"
+            rel="noopener noreferrer"
             className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface/50 rounded-sm transition-all duration-200"
             aria-label="GitHub Repository"
           >
             <Github size={20} />
           </a>
-
-          <button
-            className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface/50 rounded-sm transition-all duration-200"
-            aria-label="Toggle Theme"
-          >
-            <Moon size={20} />
-          </button>
         </div>
       </div>
 
